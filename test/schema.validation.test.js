@@ -1444,6 +1444,40 @@ describe('schema', function() {
         // Assert
         assert.ifError(err);
       });
+
+      it('should pass document instance to validation message function (gh-12564)', function(done) {
+        const s = mongoose.Schema({
+          n: {
+            type: String,
+            validate: {
+              validator: function() {
+                return false;
+              },
+              message: function(properties, doc) {
+                console.log(doc);
+                return 'fail ' + doc.n;
+              }
+            }
+          }
+        });
+        const M = mongoose.model('gh-12564', s);
+        const m = new M({ n: 0 });
+
+        m.validate(function(error) {
+          assert.equal('fail 0', error.errors['n'].message);
+          done();
+        });
+
+        const newItem = new M({ n: 10 });
+
+        newItem.save(() => {
+          M.updateOne({ _id: newItem._id }, { n: 0 }, { runValidators: true }, (error) => {
+            assert.ok(error);
+            assert.equal('fail 0', error.errors['n'].message);
+            done();
+          });
+        });
+      });
     });
   });
 });
