@@ -2554,6 +2554,18 @@ describe('Query', function() {
       assert.ok(err.message.indexOf('"Test"') !== -1, err.message);
       assert.deepEqual(err.filter, { name: 'na' });
     });
+
+    it('throws CastError if invalid ObjectId is passed (gh-13165)', async function() {
+      const err = await Model.findById('123456789012adff').
+        orFail().
+        then(() => null, err => err);
+      assert.equal(err.name, 'CastError', err.stack);
+
+      const err2 = await Model.findByIdAndUpdate('123456789012adff', {}).
+        orFail().
+        then(() => null, err => err);
+      assert.equal(err2.name, 'CastError', err2.stack);
+    });
   });
 
   describe('getPopulatedPaths', function() {
